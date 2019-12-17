@@ -1,0 +1,11 @@
+---
+repo:
+  APPSDIR: <APPSDIR>
+  INSTALLDIR: <INSTALLDIR>
+  OPSDIR: <OPSDIR>
+  PACKAGEREPO: package
+  TEMPDIR: /tmp
+  USERDIR: <USERDIR>
+database:
+  DBFILE: db/db.sqlite
+  DBTYPE: SQLite

@@ -1,0 +1,12 @@
+#### EXCLUDED FILES 
+.DS_Store
+apps/*
+log/*
+.envars
+conf/config.yml
+db/db.sqlite
+*~
+
+#### INCLUDED FILES
+!apps/.dummy
+!log/.dummy

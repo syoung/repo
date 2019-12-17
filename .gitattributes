@@ -1,0 +1,49 @@
+# DON'T EXPORT THESE FILES AND DIRS
+.gitattributes              export-ignore
+.gitmodules		    export-ignore
+stager.pm                   export-ignore
+stager.conf		    export-ignore
+
+#### PRIVATE
+private                     export-ignore
+
+#### CONF
+conf/admin                  export-ignore
+conf/.https		    export-ignore
+conf/envars.sh		    export-ignore
+
+#### HTML
+html/plugins/.gitignore     export-ignore
+html/tests                  export-ignore
+html/log/*                  export-ignore
+html/builds                 export-ignore
+
+#### REPORT
+html/plugins/report         export-ignore
+bin/sql/report.sql          export-ignore
+lib/Agua/Report             export-ignore
+lib/Agua/Report.pm          export-ignore
+cgi-bin/report.cgi          export-ignore
+
+#### MONITOR
+lib/Agua/Monitor/LSF.pm     export-ignore
+lib/Agua/Monitor/PBS.pm     export-ignore
+
+#### DBASE
+lib/Agua/DBase/SQLite.pm    export-ignore
+
+#### CGI
+cgi-bin/conf                export-ignore
+cgi-bin/lib                 export-ignore
+cgi-bin/sql                 export-ignore
+cgi-bin/log                 export-ignore
+
+#### DOCS
+docs			    export-ignore
+
+#### INPUTS
+bin/sql/createDb.pl	    export-ignore
+bin/sql/tsv		    export-ignore
+
+#### TESTS
+./t/unit/html/plugins/infusion	export-ignore

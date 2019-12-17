@@ -1,0 +1,27 @@
+[submodule "lib/Conf"]
+	path = lib/Conf
+	url = https://bitbucket.org/stuartpyoung/agua-conf
+	branch = dev
+[submodule "lib/Util"]
+	path = lib/Util
+	url = https://bitbucket.org/stuartpyoung/agua-util
+	branch = dev
+[submodule "lib/DBase"]
+	path = lib/DBase
+	url = https://bitbucket.org/stuartpyoung/agua-dbase
+	branch = dev
+[submodule "lib/Table"]
+	path = lib/Table
+	url = https://bitbucket.org/stuartpyoung/agua-table
+	branch = dev
+[submodule "lib/Test"]
+	path = lib/Test
+	url = https://bitbucket.org/stuartpyoung/agua-test
+	branch = dev
+[submodule "package"]
+	path = package
+	url = https://bitbucket.org/stuartpyoung/biopackage
+	branch = dev
+[submodule "lib/Ops"]
+	path = lib/Ops
+	url = https://bitbucket.org/stuartpyoung/agua-ops

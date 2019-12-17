@@ -1,0 +1,203 @@
+#!/usr/bin/env perl
+
+use strict;
+
+=head2
+
+ APPLICATION:     repo
+
+ PURPOSE:         INSTALL AND MANAGE PACKAGENAMES
+    
+ USAGE: repo <subcommand> [package] [version] [OPTIONS] 
+
+ SUBCOMMANDS:
+
+=over
+
+    available                   Print package names for all available installers
+    versions <package>          Print available versions for a package
+    desc <package> [version]    Describe in detail an installed package
+    install [OPTIONS]           Install a package
+    OPTIONS:
+    --url <String>              File path or web location of Git repository
+    --versionfile <String>      File with "<PACKAGE>  <VERSION>" lines to be installed
+    
+    list                        List installed versions of a package or all packages
+  
+    remove <package> <version>  Remove an installed package
+
+=back
+
+=over
+    ADDITIONAL OPTIONS
+    'Action options'
+    --opsrepo      String :    Name of ops repo (e.g., repodev, default: repo)
+    --opsfile      String :    Location of *.ops file containing configuration information
+    --pmfile       String :    Location of *.pm file containing installation instructions
+
+    'Housekeeping options'
+    --configfile   String :    Location of *.yaml config file
+    --log          String :    Print debug and other information to STDOUT (levels 1-5)
+    --logfile      String :    Location of logfile
+    --printlog     String :    Print debug and other information to logfile (levels 1-5)
+    --help                :    Print help info
+
+=back
+
+EXAMPLES:
+
+ # Update repo itself
+ repo install latest
+
+ # Install latest version from repo from the 'repodev' repository
+ repo latest --repository repodev
+
+ # Install version 0.7.6a of package BWA 
+ repo install bwa --version 0.7.6a
+
+ # Uninstall Circos version 0.64
+ repo uninstall circos --version 0.64
+
+=cut
+
+#### FLUSH BUFFER
+$| = 1;
+
+#### USE LIB
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use lib "..";
+
+#### EXTERNAL MODULES
+use Getopt::Long;
+use Data::Dumper;
+
+#### INTERNAL MODULES
+use Biorepo;
+use Conf::Yaml;
+
+#### SUBCOMMAND
+my $subcommand        =   shift @ARGV;
+print "\n*** No subcommand provided. See the following usage information ***\n" and usage() if not defined $subcommand;
+usage() if $subcommand =~ /^-h$/ or $subcommand =~ /^--help$/;
+usage() if $subcommand !~ /^(install|remove|desc|list|versions|available)/;
+
+#### PACKAGENAME
+my $packagename     =   undef;
+$packagename = shift @ARGV if $#ARGV > -1 and $ARGV[0] !~ /^-/;
+
+#### VERSION
+my $version     =   undef;
+$version = shift @ARGV if $#ARGV > -1 and $ARGV[0] !~ /^-/;
+
+#### GET log AND help
+my $log = getArgument( \@ARGV, ["--log", "-l"] ) || 2;
+my $printlog = getArgument( \@ARGV, ["--printlog", "-p"] ) || 5;
+my $help = getArgument( \@ARGV, ["--help", "-h"] );
+usage() if $help;
+
+#### CONFIG
+my $logfile     =    "/tmp/repo.$$.log";
+my $configfile  =   "$Bin/../conf/config.yml";
+my $conf = Conf::Yaml->new(
+  memory      =>  0,
+  inputfile   =>  $configfile,
+  backup      =>  1,
+  log         =>  $log,
+  printlog    =>  $printlog,
+  logfile     =>  $logfile
+);
+
+
+# #### GET ARGUMENTS
+my $arguments = getArgumentHash(@ARGV);
+$arguments->{packagename} = $packagename;
+$arguments->{version} = $version;
+$arguments->{login}   =     $ENV{'login'} if defined $ENV{'login'};
+$arguments->{token}   =     $ENV{'token'} if defined $ENV{'token'};
+$arguments->{keyfile} =     $ENV{'keyfile'} if defined $ENV{'keyfile'};
+$arguments->{password}=     $ENV{'password'} if defined $ENV{'password'};
+
+my $object = Biorepo->new({
+  conf        =>  $conf,
+  args        =>  $arguments,
+  log         =>  $log,
+  printlog    =>  $printlog,
+  logfile     =>  $logfile
+});
+
+#### CHECK SUBCOMMAND
+print "subcommand not supported: $subcommand\n" and exit if not $object->can($subcommand);
+print "subcommand not supported (private method): $subcommand\n" and exit if $subcommand =~ /^_/;
+
+#### RUN QUERY
+no strict;
+
+eval { $object->$subcommand() };
+if ( $@ ){
+  print "Error: $subcommand): $@\n";
+}
+# print "\nCompleted $0\n";
+
+
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#                                    SUBROUTINES
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+sub getArgumentHash {
+  my @argv  = @_;
+  my $hash = {};
+  while ( $#argv > -1 ) {
+
+    my $key = shift @argv;
+    if ( $key =~ /^-/ ) {
+      if ( $#argv > -1 and $argv[ 0 ] !~ /^-/ ) {
+        $hash->{$key} = shift @argv;
+      }
+      else {
+       $hash->{$key} = 1; 
+      }
+    } 
+    else {
+      $hash->{$key} = 1;
+    }
+  }
+
+  return $hash;
+}
+
+sub getArgument {
+  my $args = shift;
+  my $names = shift;
+
+  for (my $i = 0; $i < @$args; $i++) {
+    my $argument = $$args[$i];
+
+    for (my $k = 0; $k < @$names; $k++) {
+      my $name = $$names[$k];
+      $name =~ s/\-/\-/g;
+    
+      if ( $$args[$i] eq  $name ) {
+        if ( $name =~ /^(--help|-h)$/ ) {
+          return 1;
+        }
+        elsif ( $i == @$args - 1 or $$args[$i + 1] !~ /^\d+$/ ) { 
+          print "Argument '$name' requires an integer value\n";
+          exit;
+        }
+        else {
+          my $value = $$args[$i + 1];   
+          splice( @$args, $i, 2);
+          return $value;
+        }
+      } 
+    }
+  }
+}
+
+
+sub usage {
+    print `perldoc $0`;
+    exit;
+}
+    
