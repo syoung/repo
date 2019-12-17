@@ -25,3 +25,6 @@
 [submodule "lib/Ops"]
 	path = lib/Ops
 	url = https://bitbucket.org/stuartpyoung/agua-ops
+[submodule "perl"]
+	path = perl
+	url = https://github.com/syoung/flow-perl

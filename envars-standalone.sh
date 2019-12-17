@@ -28,7 +28,7 @@ do
 	eval $COMMAND 
 done
 
-if ! grep -q "~/.envars" $DIR/.bashrc; then 
-	echo ". ~/.envars" >> $DIR/.bashrc
+if ! grep -q "$DIR/.envars" ~/.bashrc; then 
+	echo ". $DIR/.envars" >> ~/.bashrc
 fi
 

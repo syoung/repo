@@ -100,10 +100,8 @@ chdir( $Bin );
 if ( $option eq "standalone" ) {
   
   ##    1. INSTALL ALL SUBMODULES
-  my $command = "git submodule update --init --recursive --remote";
-  print "$command\n";
-  system( $command );
-
+  updateSubmodules ();
+  
   ##    2. CHECKOUT OS-SPECIFIC BRANCH OF perl SUBMODULE
   checkoutPerlBranch( $os );
 
@@ -135,6 +133,16 @@ elsif ( $option eq "dependent" ) {
 }
 
 #### SUBROUTINES
+sub updateSubmodules {
+  print "Updating submodules:\n";
+  my $commands = [
+    "git submodule update --init --recursive --remote",
+  ];
+  foreach my $command ( @$commands ) {
+    print "$command\n";
+    system( $command );
+  }
+}
 
 sub copyDbFile {
   my $dbtemplate = "$Bin/db/db.sqlite.template";
@@ -227,7 +235,7 @@ sub checkoutPerlBranch {
   my $archname = undef;
   
   if ( $os eq "darwin" ) {
-    print "Loading embedded perl branch for OSX\n";
+    print "\nLoading embedded perl branch for OSX\n";
     $branch = "osx10.14.6";
     $archname = "darwin-2level";
   }
