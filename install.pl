@@ -112,6 +112,7 @@ if ( $option eq "standalone" ) {
   copyConfigFile( $os, $option );
 
   ##    5. RUN envars-standalone.sh TO SET ~/.envars FILE
+  print "\n";
   system( ". $Bin/envars-standalone.sh");
 }
 
@@ -129,12 +130,15 @@ elsif ( $option eq "dependent" ) {
   copyConfigFile( $os, $option );
 
   ##    4. RUN envars-dependent.sh TO SET ~/.envars FILE
+  print "\n";
   system( ". $Bin/envars-dependent.sh");
+
+  print "\n";
 }
 
 #### SUBROUTINES
 sub updateSubmodules {
-  print "Updating submodules:\n";
+  print "\nUpdating submodules:\n";
   my $commands = [
     "git submodule update --init --recursive --remote",
   ];
@@ -148,10 +152,10 @@ sub copyDbFile {
   my $dbtemplate = "$Bin/db/db.sqlite.template";
   my $dbfile = "$Bin/db/db.sqlite";
   if ( -f $dbfile ) {
-    print "Skipping copy dbfile as file already exists: $dbfile\n";
+    print "\nSkipping copy dbfile as file already exists: $dbfile\n";
   }
   else {
-    print "Copying $dbtemplate to $dbfile\n";
+    print "\nCopying $dbtemplate to $dbfile\n";
     move( $dbtemplate, $dbfile );
   }  
 }
@@ -163,10 +167,10 @@ sub copyConfigFile {
   my $configtemplate = "$Bin/conf/config.yml.template";
   my $configfile = "$Bin/conf/config.yml";
   if ( -f $configfile ) {
-    print "Skipping copy configfile as file already exists: $configfile\n";
+    print "\nSkipping copy configfile as file already exists: $configfile\n";
   }
   else {
-    print "Copying $configtemplate to $configfile\n";
+    print "\nCopying $configtemplate to $configfile\n";
     my $contents = getFileContents( $configtemplate );
     $contents = replaceFields( $os, $option, $contents );
     printFile( $configfile, $contents );
@@ -284,7 +288,6 @@ sub checkoutPerlBranch {
     print "perl branch: $branch-$archname\n";
 
     use FindBin qw($Bin);
-    print "Bin: $Bin\n";
     my $command = "cd $Bin/perl; git checkout $branch-$archname";
     print "$command\n";
     `$command`;
