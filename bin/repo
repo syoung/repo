@@ -6,7 +6,7 @@ use strict;
 
  APPLICATION:     repo
 
- PURPOSE:         INSTALL AND MANAGE PACKAGENAMES
+ PURPOSE:         Automated package installer and manager
     
  USAGE: repo <subcommand> [package] [version] [OPTIONS] 
 
@@ -14,33 +14,34 @@ use strict;
 
 =over
 
-    available                   Print package names for all available installers
-    versions <package>          Print available versions for a package
-    desc <package> [version]    Describe in detail an installed package
-    install [OPTIONS]           Install a package
-    OPTIONS:
-    --url <String>              File path or web location of Git repository
-    --versionfile <String>      File with "<PACKAGE>  <VERSION>" lines to be installed
-    
-    list                        List installed versions of a package or all packages
+  available                   Print package names for all available installers
+  versions <package>          Print available versions for a package
+  desc <package> [version]    Describe in detail an installed package
+  install [OPTIONS]           Install a package
+  OPTIONS:
+  --force                     Override quit if package already installed
+  --url <String>              File path or web location of Git repository
+  --versionfile <String>      File with "<PACKAGE>  <VERSION>" lines to be installed
   
-    remove <package> <version>  Remove an installed package
+  list                        List installed versions of a package or all packages
+
+  remove <package> <version>  Remove an installed package
 
 =back
 
 =over
-    ADDITIONAL OPTIONS
-    'Action options'
-    --opsrepo      String :    Name of ops repo (e.g., repodev, default: repo)
-    --opsfile      String :    Location of *.ops file containing configuration information
-    --pmfile       String :    Location of *.pm file containing installation instructions
-
-    'Housekeeping options'
-    --configfile   String :    Location of *.yaml config file
-    --log          String :    Print debug and other information to STDOUT (levels 1-5)
-    --logfile      String :    Location of logfile
-    --printlog     String :    Print debug and other information to logfile (levels 1-5)
-    --help                :    Print help info
+  ADDITIONAL OPTIONS
+  'Action options'
+  --opsrepo      String :     Name of ops repo (e.g., repodev, default: repo)
+  --opsfile      String :     Location of *.ops file containing configuration information                 
+  --pmfile       String :     Location of *.pm file containing installation instructions                
+                              
+  'HOUSEKEEPING OPTIONS'      
+  --configfile   String :     Location of *.yaml config file
+  --log          String :     Print debug and other information to STDOUT (levels 1-5)                 
+  --logfile      String :     Location of logfile
+  --printlog     String :     Print debug and other information to logfile (levels 1-5)                 
+  --help                :     Print help info
 
 =back
 
@@ -73,7 +74,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 #### INTERNAL MODULES
-use Biorepo;
+use Repo;
 use Conf::Yaml;
 
 #### SUBCOMMAND
@@ -118,7 +119,7 @@ $arguments->{token}   =     $ENV{'token'} if defined $ENV{'token'};
 $arguments->{keyfile} =     $ENV{'keyfile'} if defined $ENV{'keyfile'};
 $arguments->{password}=     $ENV{'password'} if defined $ENV{'password'};
 
-my $object = Biorepo->new({
+my $object = Repo->new({
   conf        =>  $conf,
   args        =>  $arguments,
   log         =>  $log,

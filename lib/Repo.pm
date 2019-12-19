@@ -3,11 +3,11 @@ use Method::Signatures::Simple;
 
 =head2
 
-PACKAGE    Biorepo
+PACKAGE    Repo
 
 PURPOSE
 
-  Install commonly-used Bioinformatics tools
+  Automated package installer and manager
   
 =cut
 
@@ -20,7 +20,7 @@ use Carp;
 # use lib FindBin::Real::Bin() . "/lib";
 # use Data::Dumper;
 
-class Biorepo with Util::Logger {
+class Repo with Util::Logger {
 
 #### USE LIB
 use FindBin::Real;
@@ -40,35 +40,41 @@ has 'log'        =>  ( isa => 'Int', is => 'rw', default => 1 );
 has 'printlog'   =>  ( isa => 'Int', is => 'rw', default => 1 );
 
 # Strings
-has 'status'     => ( isa => 'Str|Undef', is => 'rw' );
-has 'username'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'methods'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 's3bucket'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'branch'     => ( isa => 'Str|Undef', is => 'rw', default => undef );
 has 'configfile' => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'dumpfile'   => ( isa => 'Str|Undef', is => 'rw' );
+has 'force'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'keyfile'    => ( isa => 'Str|Undef', is => 'rw' );
+has 'logfile'    => ( isa => 'Str|Undef', is => 'rw' );
+has 'login'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'methods'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'opsdir'     => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'opsfile'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'pmfile'     => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'versionfile'=> ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'owner'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'packagename'=> ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'version'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'branch'     => ( isa => 'Str|Undef', is => 'rw', default => undef );
-has 'treeish'    => ( isa => 'Str|Undef', is => 'rw', default => undef );
+has 'password'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'pmfile'     => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'privacy'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'repository' => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'url'        => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'keyfile'    => ( isa => 'Str|Undef', is => 'rw' );
+has 's3bucket'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'status'     => ( isa => 'Str|Undef', is => 'rw' );
 has 'token'      => ( isa => 'Str|Undef', is => 'rw' );
-has 'logfile'    => ( isa => 'Str|Undef', is => 'rw' );
-has 'dumpfile'   => ( isa => 'Str|Undef', is => 'rw' );
-has 'owner'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'login'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
-has 'password'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'treeish'    => ( isa => 'Str|Undef', is => 'rw', default => undef );
+has 'url'        => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'username'   => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'version'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'versionfile'=> ( isa => 'Str|Undef', is => 'rw', default => '' );
 
 # Objects
-has 'db'      => ( isa => 'Any', is => 'rw', required => 0 );
 has 'conf'       => (
   is =>  'rw',
   isa => 'Conf::Yaml'
+);
+
+has 'db'      => ( 
+  isa => 'Any', 
+  is => 'rw', 
+  required => 0 
 );
 
 has 'table'    =>  (
@@ -121,12 +127,18 @@ method getOpts ( $args ) {
 
 #### INSTALL
 method install () {  
+  my $packagename  =  $self->packagename();
+  my $version      =  $self->version();
   my $versionfile  =  $self->versionfile();
+  $self->logDebug( "packagename", $packagename );
+  $self->logDebug( "version", $version );
   $self->logDebug( "versionfile", $versionfile );
 
   #### INSTALL USING packagename IF NO VERSIONFILE
-  return $self->_install() if $versionfile eq "";
-
+  if ( $versionfile eq "" ) {
+    return $self->_install( $packagename, $version ) ;
+  }
+  
   #### OTHERWISE, INSTALL FROM VERSIONFILE
   my $packages = $self->getVersionfilePackages( $versionfile );
 
@@ -136,7 +148,7 @@ method install () {
     my $version     = $package->{version};
     $self->logDebug("Installing package '$packagename' (version $version)");
     
-    $self->installPackageVersion( $packagename, $version );
+    $self->_install( $packagename, $version );
   }
 }
 
@@ -160,6 +172,86 @@ method getVersionfilePackages ( $versionfile ) {
   return $packages;
 }
 
+method _install ( $packagename, $version ) {
+  $self->logDebug( "packagename", $packagename );
+  $self->logDebug( "version", $version );
+
+  #### CHECK PACKAGE DEFINED
+  if ( not defined $packagename ) {
+    print "Package name not defined. Exiting\n";
+    return ;
+  }
+
+  #### CHECK IF PACKAGE ALREADY INSTALLED
+  my $force = $self->force();
+  $self->logDebug( "force", $force );
+  if ( $self->packageIsInstalled( $packagename, $version ) 
+      and $version ne "latest" 
+      and not $force ) {
+    print "Package $packagename (version $version) already installed. Use '--force' option to override.\n";
+    return;
+  }
+  
+  #### SET STATUS
+  my $status = $self->status() || "ok";
+
+  #### GET USERNAME
+  my $username    =   $self->getUsername();
+
+  #### GET DIRS  
+  my $appsdir     =   $self->conf()->getKey("repo:APPSDIR");
+  my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
+  my $opsdir      =   $self->opsdir() || $self->conf()->getKey("repo:OPSDIR");
+  $self->logDebug("installdir", $installdir);
+  $self->logDebug( "self->opsdir()", $self->opsdir() );
+  $self->logDebug( "opsdir", $opsdir );  
+    
+  #### GET OPSFILE AND PMFILE
+  my $opsfile     =  $self->opsfile();
+  my $pmfile    =  $self->pmfile();
+  $self->logDebug("opsfile", $opsfile);
+  $self->logDebug("pmfile", $pmfile);
+
+  #### SET VARIABLES FROM OPS INFO
+  my $repository   =  $self->repository();
+  my $login      =  $self->login();
+  my $owner      =  $self->owner();
+  my $privacy    =  $self->privacy();
+  my $url      =  $self->url();
+  my $branch     =  $self->branch();
+  my $treeish    =  $self->treeish();
+  $self->logDebug("repository", $repository);
+  $self->logDebug("login", $login);
+  $self->logDebug("owner", $owner);
+  $self->logDebug("privacy", $privacy);
+  $self->logDebug("url", $url);
+  $self->logDebug("branch", $branch);
+  $self->logDebug("treeish", $treeish);
+
+#   return $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
+# }
+
+# method installApplication ($owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status ) {
+#   $self->logDebug("opsdir", $opsdir);
+
+  my $ops  =  $self->setOps( $owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );
+
+  $ops->install();
+}
+
+method packageIsInstalled ( $packagename, $version ) {
+  my $query      =  qq{SELECT 1 FROM package
+WHERE packagename='$packagename'
+AND version='$version'};
+  $self->logDebug("query", $query);
+  my $found    =  $self->table()->db()->query($query);
+  if ( not $found ) {
+    return 0;
+  }
+  
+  return 1;
+}
+
 method getUsername () {
   #### USE SUPPLIED USERNAME IF USER IS root
   my $username    =   $ENV{LOGNAME} || $ENV{USERNAME} || $ENV{USER}; 
@@ -179,113 +271,49 @@ method getUsername () {
   return $username;  
 }
 
-method _install {
-  my $appsdir     =   $self->conf()->getKey("repo:APPSDIR");
-  my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
-  my $username    =   $self->getUsername();
-
-  #### GET OPSFILE AND PMFILE
-  my $opsfile     =  $self->opsfile();
-  my $pmfile    =  $self->pmfile();
-  $self->logDebug("opsfile", $opsfile);
-  $self->logDebug("pmfile", $pmfile);
-
-  #### SET PACKAGE DETAILS
-  my $packagename    =  $self->packagename();
-  $self->logDebug("packagename", $packagename);
-  print "_install  Biorepo::install  packagename not defined. Exiting\n" and return if not defined $packagename;
-
-  #### SET STATUS
-  my $status = $self->status() || "ok";
+# method installPackageVersion ($packagename, $version) {
+#   $self->logDebug("packagename", $packagename);
+#   $self->logDebug("version", $version);
   
-  #### SET VARIABLES FROM OPS INFO
-  my $login      =  $self->login();
-  my $owner      =  $self->owner();
-  my $privacy    =  $self->privacy();
-  my $repository   =  $self->repository();
-  my $url      =  $self->url();
-  my $branch     =  $self->branch();
-  my $treeish    =  $self->treeish();
-  $self->logDebug("login", $login);
-  $self->logDebug("owner", $owner);
-  $self->logDebug("privacy", $privacy);
-  $self->logDebug("repository", $repository);
-  $self->logDebug("branch", $branch);
-  $self->logDebug("treeish", $treeish);
-  $self->logDebug( "self->opsdir()", $self->opsdir() );
+#   #### SET VARIABLES FROM OPS INFO
+#   my $login     =  $self->login() || "agua";
+#   my $owner     =  $self->owner();
+#   my $privacy     =  $self->privacy();
+#   my $repository  =  $self->packagename();
+#   my $url       =  $self->url();
+#   my $branch    =  $self->branch();
+#   my $treeish     =  $self->treeish();
+#   my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
+#   $self->logDebug("login", $login);
+#   $self->logDebug("owner", $owner);
+#   $self->logDebug("privacy", $privacy);
+#   $self->logDebug("repository", $repository);
 
-  #### SET OPSDIR
-  my $opsdir  =   $self->opsdir() || $self->conf()->getKey("repo:OPSDIR");
-  $self->logDebug("opsdir", $opsdir);  
-  
-  #### SET VERSION
-  my $version    =  $self->version();
-  $self->logDebug("version", $version);
+#   #### SET OPSDIR
+#   my $basedir     =   $self->conf()->getKey("repo:INSTALLDIR");
+#   my $opsdir      =  $self->conf()->getKey("repo:OPSDIR");
+#   $self->logDebug("opsdir", $opsdir);  
 
-  $self->logDebug("installdir", $installdir);
-  $self->logDebug("repository", $repository);
-  $self->logDebug("packagename", $packagename);
-  $self->logDebug("login", $login);
-  $self->logDebug("privacy", $privacy);
-  $self->logDebug("opsdir", $opsdir);
+#   #### SET STATUS
+#   my $status = $self->status() || "ok";
 
-  #### RESET INSTALLDIR
-  my $targetdir = "$installdir/$packagename";
+#   #### SET OPSFILE AND PMFILE
+#   my $opsfile    =  "$opsdir/$packagename/$packagename.ops";
+#   my $pmfile    =  "$opsdir/$packagename/$packagename.pm";
+#   $self->logDebug("opsfile", $opsfile);
+#   $self->logDebug("pmfile", $pmfile);
 
-  return $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
-}
+#   #### SET USERNAME AND APPSDIR
+#   my $username = $self->getUsername();
+#   my $appsdir    =   $self->conf()->getKey("repo:APPSDIR");
 
-method installApplication ($owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status ) {
-  $self->logDebug("opsdir", $opsdir);
+#   #### RESET INSTALLDIR
+#   my $targetdir = "$installdir/$appsdir/$packagename";
+#   $self->logDebug("targetdir", $targetdir);  
 
-  my $ops  =  $self->setOps( $owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );
-
-  $ops->install();
-}
-
-method installPackageVersion ($packagename, $version) {
-  $self->logDebug("packagename", $packagename);
-  $self->logDebug("version", $version);
-  
-  #### SET VARIABLES FROM OPS INFO
-  my $login     =  $self->login() || "agua";
-  my $owner     =  $self->owner();
-  my $privacy     =  $self->privacy();
-  my $repository  =  $self->packagename();
-  my $url       =  $self->url();
-  my $branch    =  $self->branch();
-  my $treeish     =  $self->treeish();
-  my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
-  $self->logDebug("login", $login);
-  $self->logDebug("owner", $owner);
-  $self->logDebug("privacy", $privacy);
-  $self->logDebug("repository", $repository);
-
-  #### SET OPSDIR
-  my $basedir     =   $self->conf()->getKey("repo:INSTALLDIR");
-  my $opsdir      =  $self->conf()->getKey("repo:OPSDIR");
-  $self->logDebug("opsdir", $opsdir);  
-
-  #### SET STATUS
-  my $status = $self->status() || "ok";
-
-  #### SET OPSFILE AND PMFILE
-  my $opsfile    =  "$opsdir/$packagename/$packagename.ops";
-  my $pmfile    =  "$opsdir/$packagename/$packagename.pm";
-  $self->logDebug("opsfile", $opsfile);
-  $self->logDebug("pmfile", $pmfile);
-
-  #### SET USERNAME AND APPSDIR
-  my $username = $self->getUsername();
-  my $appsdir    =   $self->conf()->getKey("repo:APPSDIR");
-
-  #### RESET INSTALLDIR
-  my $targetdir = "$installdir/$appsdir/$packagename";
-  $self->logDebug("targetdir", $targetdir);  
-
-  my $success  =  $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
-  $self->logDebug("success install package '$packagename' (version $version)", $success);  
-}
+#   my $success  =  $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
+#   $self->logDebug("success install package '$packagename' (version $version)", $success);  
+# }
 
 method setOps ( $owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status ) {
   $self->logDebug("owner", $owner);
@@ -367,12 +395,7 @@ method removePackage ( $packagename, $version ) {
   print "Version not defined\n" and exit if not defined $version;
   print "Cannot remove repo\n" and exit if $packagename eq "repo";
 
-  my $query      =  qq{SELECT 1 FROM package
-WHERE packagename='$packagename'
-AND version='$version'};
-  $self->logDebug("query", $query);
-  my $found    =  $self->table()->db()->query($query);
-  if ( not defined $found ) {
+  if ( not $self->packageIsInstalled( $packagename, $version ) ) {
     print "Can't find package in database: $packagename (version $version). Deleting installation directory if present.\n";
   } 
   
@@ -394,7 +417,7 @@ AND version='$version'};
   }
 
   #### REMOVE FROM DATABASE
-  $query      =  qq{DELETE FROM package
+  my $query      =  qq{DELETE FROM package
 WHERE packagename='$packagename'
 AND version='$version'};
   $self->logDebug("query", $query);
@@ -416,7 +439,7 @@ method versions () {
 
   #### SET PACKAGE DETAILS
   $self->logDebug("packagename", $packagename);
-  print "versions    Biorepo::install  packagename not defined. Exiting\n" and return if not defined $packagename;
+  print "versions    Repo::install  packagename not defined. Exiting\n" and return if not defined $packagename;
   
   #### SET OPSDIR
   my $opsdir = "$installdir/package";
