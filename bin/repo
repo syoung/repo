@@ -14,18 +14,18 @@ use strict;
 
 =over
 
-  available                   Print package names for all available installers
-  versions <package>          Print available versions for a package
-  desc <package> [version]    Describe in detail an installed package
-  install [OPTIONS]           Install a package
-  OPTIONS:
-  --force                     Override quit if package already installed
-  --url <String>              File path or web location of Git repository
-  --versionfile <String>      File with "<PACKAGE>  <VERSION>" lines to be installed
-  
-  list                        List installed versions of a package or all packages
-
-  remove <package> <version>  Remove an installed package
+  available|avail                Print package names for all available installers
+  versions|ver <package>         Print available versions for a package
+  desc <package> [version]       Describe in detail an installed package
+  install|in [OPTIONS]           Install a package
+    OPTIONS:                       
+     --force                     Override quit if package already installed
+     --url <String>              File path or web location of Git repository
+     --versionfile <String>      File with "<PACKAGE>  <VERSION>" lines to be installed
+                                 
+  list                           List installed versions of a package or all packages
+                                  
+  remove|rm <package> <version>  Remove an installed package
 
 =back
 
@@ -80,6 +80,13 @@ use Conf::Yaml;
 #### SUBCOMMAND
 my $subcommand        =   shift @ARGV;
 print "\n*** No subcommand provided. See the following usage information ***\n" and usage() if not defined $subcommand;
+
+#### SHORTCUTS
+$subcommand = "install" if $subcommand eq "in";
+$subcommand = "available" if $subcommand eq "avail";
+$subcommand = "versions" if $subcommand eq "vers";
+$subcommand = "remove" if $subcommand eq "rm";
+
 usage() if $subcommand =~ /^-h$/ or $subcommand =~ /^--help$/;
 usage() if $subcommand !~ /^(install|remove|desc|list|versions|available)/;
 

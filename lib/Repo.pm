@@ -15,11 +15,6 @@ use strict;
 use warnings;
 use Carp;
 
-# #### USE LIB FOR INHERITANCE
-# use FindBin::Real;
-# use lib FindBin::Real::Bin() . "/lib";
-# use Data::Dumper;
-
 class Repo with Util::Logger {
 
 #### USE LIB
@@ -48,6 +43,8 @@ has 'keyfile'    => ( isa => 'Str|Undef', is => 'rw' );
 has 'logfile'    => ( isa => 'Str|Undef', is => 'rw' );
 has 'login'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'methods'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'appsdir'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
+has 'installdir' => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'opsdir'     => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'opsfile'    => ( isa => 'Str|Undef', is => 'rw', default => '' );
 has 'owner'      => ( isa => 'Str|Undef', is => 'rw', default => '' );
@@ -199,8 +196,8 @@ method _install ( $packagename, $version ) {
   my $username    =   $self->getUsername();
 
   #### GET DIRS  
-  my $appsdir     =   $self->conf()->getKey("repo:APPSDIR");
-  my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
+  my $appsdir     =   $self->appsdir() || $self->conf()->getKey("repo:APPSDIR");
+  my $installdir  =   $self->installdir() || $self->conf()->getKey("repo:INSTALLDIR");
   my $opsdir      =   $self->opsdir() || $self->conf()->getKey("repo:OPSDIR");
   $self->logDebug("installdir", $installdir);
   $self->logDebug( "self->opsdir()", $self->opsdir() );
@@ -208,7 +205,7 @@ method _install ( $packagename, $version ) {
     
   #### GET OPSFILE AND PMFILE
   my $opsfile     =  $self->opsfile();
-  my $pmfile    =  $self->pmfile();
+  my $pmfile      =  $self->pmfile();
   $self->logDebug("opsfile", $opsfile);
   $self->logDebug("pmfile", $pmfile);
 
@@ -227,12 +224,6 @@ method _install ( $packagename, $version ) {
   $self->logDebug("url", $url);
   $self->logDebug("branch", $branch);
   $self->logDebug("treeish", $treeish);
-
-#   return $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
-# }
-
-# method installApplication ($owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status ) {
-#   $self->logDebug("opsdir", $opsdir);
 
   my $ops  =  $self->setOps( $owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );
 
@@ -270,50 +261,6 @@ method getUsername () {
 
   return $username;  
 }
-
-# method installPackageVersion ($packagename, $version) {
-#   $self->logDebug("packagename", $packagename);
-#   $self->logDebug("version", $version);
-  
-#   #### SET VARIABLES FROM OPS INFO
-#   my $login     =  $self->login() || "agua";
-#   my $owner     =  $self->owner();
-#   my $privacy     =  $self->privacy();
-#   my $repository  =  $self->packagename();
-#   my $url       =  $self->url();
-#   my $branch    =  $self->branch();
-#   my $treeish     =  $self->treeish();
-#   my $installdir  =   $self->conf()->getKey("repo:INSTALLDIR");
-#   $self->logDebug("login", $login);
-#   $self->logDebug("owner", $owner);
-#   $self->logDebug("privacy", $privacy);
-#   $self->logDebug("repository", $repository);
-
-#   #### SET OPSDIR
-#   my $basedir     =   $self->conf()->getKey("repo:INSTALLDIR");
-#   my $opsdir      =  $self->conf()->getKey("repo:OPSDIR");
-#   $self->logDebug("opsdir", $opsdir);  
-
-#   #### SET STATUS
-#   my $status = $self->status() || "ok";
-
-#   #### SET OPSFILE AND PMFILE
-#   my $opsfile    =  "$opsdir/$packagename/$packagename.ops";
-#   my $pmfile    =  "$opsdir/$packagename/$packagename.pm";
-#   $self->logDebug("opsfile", $opsfile);
-#   $self->logDebug("pmfile", $pmfile);
-
-#   #### SET USERNAME AND APPSDIR
-#   my $username = $self->getUsername();
-#   my $appsdir    =   $self->conf()->getKey("repo:APPSDIR");
-
-#   #### RESET INSTALLDIR
-#   my $targetdir = "$installdir/$appsdir/$packagename";
-#   $self->logDebug("targetdir", $targetdir);  
-
-#   my $success  =  $self->installApplication( $owner, $login, $username, $repository, $packagename, $privacy, $appsdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status );  
-#   $self->logDebug("success install package '$packagename' (version $version)", $success);  
-# }
 
 method setOps ( $owner, $login, $username, $repository, $packagename, $privacy, $installdir, $pmfile, $opsfile, $opsdir, $version, $branch, $treeish, $url, $status ) {
   $self->logDebug("owner", $owner);
@@ -358,7 +305,6 @@ method setOps ( $owner, $login, $username, $repository, $packagename, $privacy, 
 
   return $ops;
 }
-
 
 #### UNINSTALL SPECIFIC VERSION OF PACKAGE AND DELETE FROM DATABASE
 method remove () {
