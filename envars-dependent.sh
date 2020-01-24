@@ -16,12 +16,14 @@ declare -a COMMANDS=(
 	"export PERL5LIB=$DIR/lib:\$PERL5LIB"
 )
 
-rm -fr $DIR/.envars
+ENVARFILE=$DIR/.envars
+echo "\nCreating envarfile: $ENVARFILE"
+rm -fr $ENVARFILE
 for ((i = 0; i < ${#COMMANDS[@]} + 1; i++))
 do
 	COMMAND=${COMMANDS[$i]}
 	echo $COMMAND
-	echo $COMMAND >> $DIR/.envars
+	echo $COMMAND >> $ENVARFILE
 	eval $COMMAND 
 done
 

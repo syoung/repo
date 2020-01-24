@@ -113,7 +113,7 @@ if ( $option eq "standalone" ) {
 
   ##    5. RUN envars-standalone.sh TO SET ~/.envars FILE
   print "\n";
-  system( ". $Bin/envars-standalone.sh");
+  system( "$Bin/envars-standalone.sh");
 }
 
 #### dependent INSTALLATION
@@ -131,7 +131,7 @@ elsif ( $option eq "dependent" ) {
 
   ##    4. RUN envars-dependent.sh TO SET ~/.envars FILE
   print "\n";
-  system( ". $Bin/envars-dependent.sh");
+  system( "$Bin/envars-dependent.sh");
 
   print "\n";
 }
@@ -149,7 +149,7 @@ sub updateSubmodules {
 }
 
 sub copyDbFile {
-  my $dbtemplate = "$Bin/db/db.sqlite.template";
+  my $dbtemplate = "$Bin/db/db.sqlite-template";
   my $dbfile = "$Bin/db/db.sqlite";
   if ( -f $dbfile ) {
     print "\nSkipping copy dbfile as file already exists: $dbfile\n";
@@ -164,7 +164,7 @@ sub copyConfigFile {
   my $os     = shift;
   my $option = shift;
 
-  my $configtemplate = "$Bin/conf/config.yml.template";
+  my $configtemplate = "$Bin/conf/config.yml-template";
   my $configfile = "$Bin/conf/config.yml";
   if ( -f $configfile ) {
     print "\nSkipping copy configfile as file already exists: $configfile\n";
@@ -248,7 +248,7 @@ sub checkoutPerlBranch {
 
     my $osname=`/usr/bin/perl -V  | grep "archname="`;
     # print "osname: $osname\n";
-    ($archname) = $osname =~ /archname=(\S+)/;
+    ($archname) = $osname =~ /archname=([^\-]+)/;
     # print "archname: $archname\n";
 
     if ( -f "/etc/lsb-release" ) {
